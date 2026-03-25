@@ -7,6 +7,19 @@
 
 <style>
 
+.botoes-topo {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* 📱 CELULAR */
+@media (max-width: 600px) {
+    .botoes-topo {
+        flex-direction: column;
+        align-items: center;
+    }
+}
 /* RESPONSIVO SIMPLES */
 * {
     box-sizing: border-box;
@@ -100,7 +113,7 @@ top:20px;
 
 <h1>🚗 Wagen Estética Automotiva</h1>
 
-<div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:15px;">
+<div class="botoes-topo" style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:15px;">
 
 <a href="/painel">
 <button>
