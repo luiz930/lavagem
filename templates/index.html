@@ -7,19 +7,20 @@
 
 <style>
 
-.botoes-topo {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
+#relogio {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    background: #111827;
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #facc15;
+    color: #facc15;
+    font-size: 14px;
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.2);
+    z-index: 999;
 }
 
-/* 📱 CELULAR */
-@media (max-width: 600px) {
-    .botoes-topo {
-        flex-direction: column;
-        align-items: center;
-    }
-}
 /* RESPONSIVO SIMPLES */
 * {
     box-sizing: border-box;
@@ -113,7 +114,8 @@ top:20px;
 
 <h1>🚗 Wagen Estética Automotiva</h1>
 
-<div class="botoes-topo" style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:15px;">
+<div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-top:15px;">
+<div id="relogio" style="margin-top:10px; font-size:18px; color:#facc15;"></div>
 
 <a href="/painel">
 <button>
@@ -127,10 +129,18 @@ top:20px;
 </button>
 </a>
 
+<a href="/financeiro">
+<button>💰 Financeiro</button>
+</a>
+
 <a href="/pneu">
 <button>
 🛞 Produtos Pneu
 </button>
+</a>
+
+<a href="/clima">
+<button>🌧️ Clima</button>
 </a>
 
 
@@ -192,7 +202,13 @@ top:20px;
 
 <button onclick="abrirServico()">+ Novo Atendimento</button>
 
-<form id="formServico" class="hidden" action="/servico" method="POST">
+<form id="formServico" class="hidden" action="/servico" method="POST" enctype="multipart/form-data">
+
+    <p>📸 Fotos de entrada</p>
+<input type="file" name="foto_entrada" accept="image/*" multiple required>
+
+<p>📸 Fotos de detalhes</p>
+<input type="file" name="foto_detalhe" accept="image/*" multiple required>
 
 <input name="placa" value="{{dados[0]}}" readonly><br>
 
@@ -228,7 +244,7 @@ top:20px;
 <select name="hidro_vidros"><option>Não</option><option>Sim</option></select>
 
 <br>
-<button>Salvar Atendimento</button>
+<button type="submit">Salvar Atendimento</button>
 
 </form>
 </div>
@@ -258,7 +274,7 @@ top:20px;
 
 <p><b>Entrada:</b> {{s[4]}}</p>
 <p><b>Entrega:</b> {{s[5] if s[5] else "Em andamento"}}</p>
-<p><b>Tempo:</b> {{tempo}}</p>
+<p><b>Tempo:</b> <span class="tempo" data-entrada="{{s[4]}}" data-status="{{s[13]}}">Calculando...</span></p>
 
 <hr style="border:1px solid #374151;">
 
@@ -313,6 +329,99 @@ function preencherValor(){
 window.onload = function(){
     preencherValor();
 }
+</script>
+
+<script>
+let climaTexto = "🌤️ Carregando...";
+let sugestaoTexto = "";
+
+function atualizarRelogio() {
+    const agora = new Date();
+
+    const data = agora.toLocaleDateString('pt-BR');
+    const hora = agora.toLocaleTimeString('pt-BR');
+
+    document.getElementById("relogio").innerHTML =
+        "📅 " + data + " ⏰ " + hora + " | " + climaTexto + " " + sugestaoTexto;
+}
+
+// 🔥 BUSCAR CLIMA REAL
+async function atualizarClima() {
+    try {
+        const res = await fetch("/api/clima");
+        const data = await res.json();
+
+        if (!data.erro) {
+            climaTexto = `${data.icone} ${data.clima} (${data.temp}°C)`;
+            sugestaoTexto = data.sugestao;
+        }
+
+    } catch (e) {
+        climaTexto = "⚠️ Sem clima";
+        sugestaoTexto = "";
+    }
+}
+
+// atualiza clima a cada 1 minuto
+setInterval(atualizarClima, 60000);
+
+// relógio em tempo real
+setInterval(atualizarRelogio, 1000);
+
+// iniciar
+atualizarClima();
+atualizarRelogio();
+</script>
+
+<script>
+function atualizarTempos() {
+    const elementos = document.querySelectorAll(".tempo");
+
+    elementos.forEach(el => {
+        const entradaStr = el.getAttribute("data-entrada");
+        const status = el.getAttribute("data-status");
+
+        if (!entradaStr || status === "FINALIZADO") return;
+
+        try {
+            const partes = entradaStr.split(" ");
+            const data = partes[0].split("/");
+            const hora = partes[1].split(":");
+
+            const entrada = new Date(
+                data[2], // ano
+                data[1] - 1, // mês
+                data[0], // dia
+                hora[0],
+                hora[1]
+            );
+
+            const agora = new Date();
+            const diff = Math.floor((agora - entrada) / 1000);
+
+            const h = Math.floor(diff / 3600);
+            const m = Math.floor((diff % 3600) / 60);
+            const s = diff % 60;
+
+            el.innerHTML = `${h}h ${m}m ${s}s`;
+
+            // 🔔 ALERTA (ex: mais de 1 hora)
+            if (diff > 3600) {
+                el.style.color = "#ef4444"; // vermelho
+                el.style.fontWeight = "bold";
+                el.innerHTML += " ⚠️ ATRASADO";
+            } else {
+                el.style.color = "#22c55e"; // verde
+            }
+
+        } catch (e) {
+            el.innerHTML = "Erro";
+        }
+    });
+}
+
+setInterval(atualizarTempos, 1000);
+atualizarTempos();
 </script>
 
 </body>
